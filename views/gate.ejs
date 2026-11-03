@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>הצעת מחיר <%= number %> · <%= company.name %></title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="page gate">
+  <div class="brand">
+    <div class="mono">PROPOSAL <span style="color:var(--maroon)"><%= number %></span></div>
+    <div class="name"><img src="<%= company.logo_url %>" alt=""> <%= company.name %></div>
+  </div>
+  <hr class="strong">
+  <% if (notFound) { %>
+    <h1 class="title" style="font-size:30px">הצעה לא נמצאה</h1>
+    <p>בדוק את הקישור שקיבלת, או פנה אלינו: <a href="mailto:<%= company.email %>"><%= company.email %></a></p>
+  <% } else { %>
+    <h1 class="title" style="font-size:30px">הצעת מחיר אישית</h1>
+    <p class="subtitle" style="font-size:17px">הצעה זו מיועדת ללקוח ספציפי. כדי לצפות בה, הזן את מספר הטלפון שאליו נשלחה.</p>
+    <% if (error) { %><div class="err"><%= error %></div><% } %>
+    <form method="post" action="/q/<%= number %>/unlock">
+      <label>מספר טלפון</label>
+      <input class="ltr" type="tel" name="phone" inputmode="tel" autocomplete="tel" placeholder="050-000-0000" required autofocus>
+      <div style="margin-top:16px"><button class="btn" type="submit" style="width:100%">כניסה להצעה</button></div>
+    </form>
+    <p class="small" style="margin-top:18px">ההצעה חסויה ומיועדת לנמען בלבד · <%= company.website %></p>
+  <% } %>
+</div>
+</body>
+</html>

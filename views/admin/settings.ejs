@@ -1,0 +1,31 @@
+<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>הגדרות · ניהול</title><link rel="stylesheet" href="/style.css"></head>
+<body><div class="adm">
+<nav><a class="btn sm" href="/admin/new">+ הצעה חדשה</a><a href="/admin">כל ההצעות</a><a href="/admin/settings">הגדרות</a><span class="logo">הגדרות</span></nav>
+<div class="card"><h3 style="margin:0">פרטי החברה (מופיעים בכל ההצעות)</h3>
+<div class="grid2">
+ <div><label>שם מותג (לועזי)</label><input id="c_name" value="<%= S.company.name %>"></div>
+ <div><label>שם משפטי (עברית)</label><input id="c_name_he" value="<%= S.company.name_he %>"></div>
+ <div><label>תגית (באנגלית, בכותרת התחתונה)</label><input id="c_tagline" class="ltr" value="<%= S.company.tagline %>"></div>
+ <div><label>אתר</label><input id="c_website" class="ltr" value="<%= S.company.website %>"></div>
+ <div><label>אימייל</label><input id="c_email" class="ltr" value="<%= S.company.email %>"></div>
+ <div><label>ח.פ.</label><input id="c_hp" class="ltr" value="<%= S.company.hp %>"></div>
+ <div><label>כתובת</label><input id="c_address" value="<%= S.company.address %>"></div>
+ <div><label>פרטי בנק (לסעיף התשלום)</label><input id="c_bank" value="<%= S.company.bank %>"></div>
+ <div><label>קישור ללוגו (החלף את public/logo.svg או הדבק כתובת)</label><input id="c_logo" class="ltr" value="<%= S.company.logo_url %>"></div>
+</div></div>
+<div class="card"><h3 style="margin:0">ברירות מחדל להצעה חדשה</h3>
+<div class="grid3">
+ <div><label>מע"מ %</label><input id="vat" type="number" class="ltr" value="<%= S.vat %>"></div>
+ <div><label>תוקף (ימים)</label><input id="valid_days" type="number" class="ltr" value="<%= S.valid_days %>"></div>
+ <div><label>קידומת מספר הצעה</label><input id="prefix" class="ltr" value="<%= prefix %>"></div>
+ <div><label>המספר הרץ הבא (אם אין הצעות השנה)</label><input id="next_seq" type="number" class="ltr" value="<%= nextSeq %>"></div>
+</div>
+<div class="small">השלבים, פריסת התשלומים והתנאים לברירת מחדל נמצאים בקובץ defaults.js; כל הצעה ניתנת לעריכה בנפרד.</div>
+</div>
+<div class="row-actions"><button class="btn" onclick="save()">שמור הגדרות</button><span id="msg" class="small"></span></div>
+<script>
+async function save(){ const g=id=>document.getElementById(id).value;
+ const body={ settings:{ company:{name:g('c_name'),name_he:g('c_name_he'),tagline:g('c_tagline'),website:g('c_website'),email:g('c_email'),hp:g('c_hp'),address:g('c_address'),bank:g('c_bank'),logo_url:g('c_logo')}, vat:Number(g('vat')), valid_days:Number(g('valid_days')) }, prefix:g('prefix'), next_seq:g('next_seq') };
+ const r=await fetch('/admin/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); document.getElementById('msg').textContent=(await r.json()).ok?'נשמר ✓':'שגיאה'; }
+</script>
+</div></body></html>

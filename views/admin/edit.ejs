@@ -1,0 +1,107 @@
+<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title><%= isNew?'הצעה חדשה':'עריכה '+q.number %> · ניהול</title><link rel="stylesheet" href="/style.css"></head>
+<body><div class="adm">
+<nav><a class="btn sm" href="/admin/new">+ הצעה חדשה</a><a href="/admin">כל ההצעות</a><a href="/admin/settings">הגדרות</a><span class="logo"><%= isNew?'הצעה חדשה':'עריכת הצעה' %> <span class="mono" style="color:var(--maroon)"><%= q.number %></span></span></nav>
+
+<div class="card">
+  <div class="grid3">
+    <div><label>מספר הצעה</label><input id="number" class="ltr" value="<%= q.number %>" <%= isNew?'':'readonly' %>></div>
+    <div><label>תאריך הנפקה</label><input id="issued_at" type="date" class="ltr" value="<%= q.issued_at %>"></div>
+    <div><label>תוקף (ימים)</label><input id="valid_days" type="number" class="ltr" value="<%= q.valid_days %>"></div>
+  </div>
+  <div class="grid2">
+    <div><label>שם הלקוח / העסק *</label><input id="client_name" value="<%= q.client_name %>" placeholder="טל חזן, אדם ואבן · אבנים"></div>
+    <div><label>טלפון הלקוח * (זו הסיסמה לכניסה להצעה)</label><input id="client_phone" class="ltr" type="tel" value="<%= q.client_phone %>" placeholder="050-000-0000"></div>
+  </div>
+  <label>כותרת ההצעה *</label><input id="title" value="<%= q.title %>" placeholder="מערכת מענה, לידים וניהול הזמנות לשני קווי המצבות">
+  <label>תיאור המערכת (סעיף 01)</label><textarea id="description" rows="5" placeholder="הצעה זו מתייחסת להקמת מערכת אחת..."><%= q.data.description||'' %></textarea>
+  <div class="grid3">
+    <div><label>שם השורה בטבלת המחיר</label><input id="line_label" value="<%= q.data.line_label||'הקמת המערכת' %>"></div>
+    <div><label>מע"מ %</label><input id="vat" type="number" class="ltr" value="<%= q.data.vat ?? 18 %>"></div>
+    <div><label>סטטוס</label><select id="status"><% ['pending','approved','expired','draft'].forEach(s=>{ %><option value="<%= s %>" <%= q.status===s?'selected':'' %>><%= {pending:'ממתין לאישור',approved:'אושר',expired:'פג תוקף',draft:'טיוטה (לא נגיש ללקוח)'}[s] %></option><% }) %></select></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="margin:0">רכיבי המערכת (נספח א) <span class="small" id="sumline"></span></h3>
+  <div id="comps"></div>
+  <button class="btn sm ghost" onclick="addComp()">+ הוסף רכיב</button>
+  <label>"בסיום ההקמה" – שורה לכל סעיף (✓)</label>
+  <textarea id="outcomes" rows="4" placeholder="כל שיחה והודעה בשני הקווים נענית מיד, גם בערב, במוצאי שבת ובחגים"><%= (q.data.outcomes||[]).join('\n') %></textarea>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 6px">איך מתקדמים (שלבים)</h3>
+  <div class="grid2" id="stages"></div>
+  <h3 style="margin:16px 0 6px">פריסת תשלומים</h3>
+  <div id="split"></div>
+  <div class="small">הסכומים מחושבים אוטומטית מתוך סה"כ כולל מע"מ ומוצגים בסעיף 1 של התנאים.</div>
+</div>
+
+<div class="card">
+  <details><summary style="cursor:pointer;font-weight:700">תנאים והסכמות (נספח ב) – לחץ לעריכה</summary>
+  <div class="small" style="margin:8px 0">משתנים זמינים: {PAYMENT_SPLIT} {PAYMENT_AMOUNTS} {COMPANY} {COMPANY_HE} {BANK} {VALID_DAYS} {ISSUED} {VAT}</div>
+  <div id="terms"></div>
+  <button class="btn sm ghost" onclick="addTerm()">+ הוסף סעיף</button>
+  </details>
+</div>
+
+<% if (!isNew) { %>
+<div class="card">
+  <h3 style="margin:0 0 6px">פעילות</h3>
+  <% if (approval) { %><div class="badge approved">אושר ע"י <%= approval.signer_name %> · <%= approval.at %> UTC</div><% } %>
+  <% if (views && views.length) { %><table class="list-table" style="margin-top:8px"><thead><tr><th>זמן (UTC)</th><th>טלפון שהוזן</th><th>תוצאה</th></tr></thead><tbody>
+  <% views.forEach(v=>{ %><tr><td class="small ltr"><%= v.at %></td><td class="ltr"><%= v.phone_entered %></td><td><%= v.ok?'✓ נכנס':'✗ שגוי' %></td></tr><% }) %></tbody></table>
+  <% } else { %><div class="small">הלקוח עדיין לא ניסה להיכנס.</div><% } %>
+</div>
+<% } %>
+
+<div class="row-actions" style="position:sticky;bottom:0;background:var(--bg);padding:12px 0">
+  <button class="btn" onclick="save()">שמור</button>
+  <button class="btn ghost" onclick="save(true)">שמור ותצוגה מקדימה</button>
+  <% if (!isNew) { %><form method="post" action="/admin/delete/<%= q.number %>" onsubmit="return confirm('למחוק את ההצעה?')" style="margin-right:auto"><button class="btn sm ghost" style="color:var(--maroon);border-color:var(--maroon)">מחיקה</button></form><% } %>
+  <span id="msg" class="small"></span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const Q = <%- JSON.stringify(q.data) %>;
+const el = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const fmt = n => new Intl.NumberFormat('he-IL').format(Math.round(n||0));
+
+function compHtml(c, i){ return `<div class="compbox" data-i="${i}"><button class="x" onclick="this.parentNode.remove();sum()">✕</button>
+ <div class="grid3"><div style="grid-column:span 2"><label>שם הרכיב</label><input class="c-name" value="${esc(c.name)}" placeholder="מאגר מרכזי ותפקידים"></div>
+ <div><label>מחיר לפני מע"מ ₪</label><input class="c-price ltr" type="number" value="${esc(c.price)}" oninput="sum()"></div></div>
+ <div class="grid3"><div style="grid-column:span 2"><label>תיאור</label><textarea class="c-desc" rows="3">${esc(c.desc)}</textarea></div>
+ <div><label>הערכת שעות</label><input class="c-hours ltr" type="number" value="${esc(c.hours)}" oninput="sum()"></div></div>
+ <label>נקודות (שורה לכל נקודה)</label><textarea class="c-bullets" rows="3">${esc((c.bullets||[]).join('\n'))}</textarea></div>`; }
+function addComp(c={name:'',desc:'',hours:'',price:'',bullets:[]}){ el('comps').insertAdjacentHTML('beforeend', compHtml(c, el('comps').children.length)); }
+function readComps(){ return [...el('comps').querySelectorAll('.compbox')].map(b=>({name:b.querySelector('.c-name').value.trim(), desc:b.querySelector('.c-desc').value.trim(), hours:b.querySelector('.c-hours').value, price:b.querySelector('.c-price').value, bullets:b.querySelector('.c-bullets').value.split('\n').map(s=>s.trim()).filter(Boolean)})).filter(c=>c.name); }
+function sum(){ const cs=readComps(); const s=cs.reduce((a,c)=>a+Number(c.price||0),0); const v=Number(el('vat').value||0); el('sumline').textContent=`· ${cs.length} רכיבים · ${fmt(s)} ₪ לפני מע"מ · ${fmt(s*(1+v/100))} ₪ כולל מע"מ`; }
+el('vat').oninput=sum;
+
+function stagesRender(st){ el('stages').innerHTML = st.map((s,i)=>`<div class="compbox"><div class="mono">שלב ${String(i+1).padStart(2,'0')}</div><input class="s-title" value="${esc(s.title)}" placeholder="כותרת"><input class="s-desc" style="margin-top:6px" value="${esc(s.desc)}" placeholder="תיאור קצר"></div>`).join(''); }
+function readStages(){ return [...el('stages').querySelectorAll('.compbox')].map(b=>({title:b.querySelector('.s-title').value.trim(), desc:b.querySelector('.s-desc').value.trim()})).filter(s=>s.title); }
+function splitRender(sp){ el('split').innerHTML = sp.map(p=>`<div class="grid3" style="align-items:end"><div><label>אחוז</label><input class="p-pct ltr" type="number" value="${esc(p.pct)}"></div><div style="grid-column:span 2"><label>מתי</label><input class="p-label" value="${esc(p.label)}"></div></div>`).join(''); }
+function readSplit(){ return [...el('split').querySelectorAll('.grid3')].map(b=>({pct:b.querySelector('.p-pct').value, label:b.querySelector('.p-label').value.trim()})).filter(p=>Number(p.pct)>0); }
+function termHtml(t){ return `<div class="compbox"><button class="x" onclick="this.parentNode.remove()">✕</button><input class="t-title" value="${esc(t.title)}" placeholder="כותרת הסעיף (אופציונלי)"><textarea class="t-text" rows="3" style="margin-top:6px">${esc(t.text)}</textarea></div>`; }
+function addTerm(t={title:'',text:''}){ el('terms').insertAdjacentHTML('beforeend', termHtml(t)); }
+function readTerms(){ return [...el('terms').querySelectorAll('.compbox')].map(b=>({title:b.querySelector('.t-title').value.trim(), text:b.querySelector('.t-text').value.trim()})).filter(t=>t.text); }
+
+(Q.components||[]).forEach(addComp); if(!el('comps').children.length) addComp();
+stagesRender(Q.stages||[]); splitRender(Q.payment_split||[]); (Q.terms||[]).forEach(addTerm); sum();
+
+async function save(preview){
+  const body = { number: el('number').value.trim(), client_name: el('client_name').value, client_phone: el('client_phone').value, title: el('title').value,
+    status: el('status').value, issued_at: el('issued_at').value, valid_days: el('valid_days').value,
+    data: { description: el('description').value.trim(), line_label: el('line_label').value.trim(), vat: Number(el('vat').value), components: readComps(),
+            outcomes: el('outcomes').value.split('\n').map(s=>s.trim()).filter(Boolean), stages: readStages(), payment_split: readSplit(), terms: readTerms() } };
+  const pcts = body.data.payment_split.reduce((a,p)=>a+Number(p.pct),0);
+  if (body.data.payment_split.length && pcts!==100 && !confirm('פריסת התשלומים מסתכמת ב-'+pcts+'% ולא ב-100%. להמשיך?')) return;
+  const r = await fetch('/admin/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j = await r.json();
+  if(!j.ok){ el('msg').textContent='⚠ '+j.error; el('msg').style.color='var(--maroon)'; return; }
+  if(preview) location.href='/admin/preview/'+j.number; else if (<%= isNew?'true':'false' %>) location.href='/admin/edit/'+j.number; else { const t=el('toast'); t.textContent='נשמר ✓'; t.style.display='block'; setTimeout(()=>t.style.display='none',1500); }
+}
+</script>
+</div></body></html>

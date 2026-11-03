@@ -1,0 +1,25 @@
+<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>הצעות מחיר · ניהול</title><link rel="stylesheet" href="/style.css"></head>
+<body><div class="adm">
+<nav><a class="btn sm" href="/admin/new">+ הצעה חדשה</a><a href="/admin">כל ההצעות</a><a href="/admin/settings">הגדרות</a><a href="/admin/logout" class="small">יציאה</a><span class="logo">מחולל הצעות מחיר</span></nav>
+<% const lbl={pending:'ממתין',approved:'אושר',expired:'פג תוקף',draft:'טיוטה'}; %>
+<div class="card" style="padding:0;overflow:auto">
+<table class="list-table"><thead><tr><th>מספר</th><th>לקוח</th><th>כותרת</th><th>תאריך</th><th>סטטוס</th><th>צפיות</th><th>קישור ללקוח</th><th></th></tr></thead><tbody>
+<% if (!quotes.length) { %><tr><td colspan="8" style="text-align:center;padding:30px" class="small">אין עדיין הצעות. לחץ "הצעה חדשה".</td></tr><% } %>
+<% quotes.forEach(q=>{ const link=baseUrl+'/q/'+q.number; const st=q.approved?'approved':q.status; %>
+<tr>
+ <td class="mono" style="color:var(--maroon)"><a href="/admin/edit/<%= q.number %>"><%= q.number %></a></td>
+ <td><b><%= q.client_name %></b><div class="small ltr"><%= q.client_phone %></div></td>
+ <td><%= q.title %></td>
+ <td class="small"><%= fmtDate(q.issued_at) %></td>
+ <td><span class="badge <%= st %>"><%= lbl[st] %></span><% if(q.approved){ %><div class="small"><%= q.approved.signer_name %></div><% } %></td>
+ <td><%= q.views %></td>
+ <td><span class="copy small" data-copy="<%= link %>" title="לחץ להעתקה">העתק קישור</span> · <a class="small" target="_blank" href="/admin/preview/<%= q.number %>">תצוגה</a></td>
+ <td class="row-actions"><a class="btn sm ghost" href="/admin/edit/<%= q.number %>">עריכה</a>
+   <form method="post" action="/admin/duplicate/<%= q.number %>" style="display:inline"><button class="btn sm ghost" title="שכפול להצעה חדשה">שכפל</button></form>
+   <a class="btn sm ghost" target="_blank" href="https://wa.me/<%= q.client_phone.replace(/\D/g,'').replace(/^0/,'972') %>?text=<%= encodeURIComponent('שלום ' + q.client_name + ',\nהכנתי עבורך הצעת מחיר מפורטת: ' + q.title + '\n\nהקישור להצעה:\n' + link + '\n\nהכניסה להצעה עם מספר הטלפון שלך.\nאשמח לענות על כל שאלה.') %>">WhatsApp</a>
+ </td>
+</tr><% }) %>
+</tbody></table></div>
+<div class="toast" id="toast">הקישור הועתק</div>
+<script>document.querySelectorAll('.copy').forEach(e=>e.onclick=()=>{navigator.clipboard.writeText(e.dataset.copy);const t=document.getElementById('toast');t.style.display='block';setTimeout(()=>t.style.display='none',1500)})</script>
+</div></body></html>

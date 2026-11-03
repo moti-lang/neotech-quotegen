@@ -1,0 +1,6 @@
+node_modules
+data
+.env
+*.png
+shot.js
+server.log

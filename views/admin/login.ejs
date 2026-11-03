@@ -1,0 +1,7 @@
+<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>כניסה · מחולל הצעות</title><link rel="stylesheet" href="/style.css"></head>
+<body><div class="page gate">
+<div class="brand"><div class="mono">ADMIN</div><div class="name"><img src="/logo.svg" alt=""> מחולל הצעות מחיר</div></div><hr class="strong">
+<% if (error) { %><div class="err"><%= error %></div><% } %>
+<form method="post" action="/admin/login"><label>סיסמת ניהול</label><input type="password" name="password" required autofocus>
+<div style="margin-top:16px"><button class="btn" style="width:100%">כניסה</button></div></form>
+</div></body></html>
