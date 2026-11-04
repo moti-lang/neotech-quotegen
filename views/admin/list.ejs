@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>הצעות מחיר · ניהול</title><link rel="stylesheet" href="/style.css"></head>
 <body><div class="adm">
-<nav><a class="btn sm" href="/admin/new">+ הצעה חדשה</a><a href="/admin">כל ההצעות</a><a href="/admin/settings">הגדרות</a><a href="/admin/logout" class="small">יציאה</a><span class="logo">מחולל הצעות מחיר</span></nav>
+<%- include('_nav', { navTitle: 'הצעות מחיר' }) %>
 <% const lbl={pending:'ממתין',approved:'אושר',expired:'פג תוקף',draft:'טיוטה'}; %>
 <div class="card" style="padding:0;overflow:auto">
 <table class="list-table"><thead><tr><th>מספר</th><th>לקוח</th><th>כותרת</th><th>תאריך</th><th>סטטוס</th><th>צפיות</th><th>קישור ללקוח</th><th></th></tr></thead><tbody>

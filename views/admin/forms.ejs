@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>טפסים · ניהול</title><link rel="stylesheet" href="/style.css"></head>
+<body><div class="adm">
+<%- include('_nav', { navTitle: 'טפסים' }) %>
+<div class="card" style="padding:0;overflow:auto">
+<table class="list-table"><thead><tr><th>טופס</th><th>סטטוס</th><th>תשובות</th><th>תשובה אחרונה</th><th>קישור למילוי</th><th></th></tr></thead><tbody>
+<% if (!forms.length) { %><tr><td colspan="6" style="text-align:center;padding:30px" class="small">אין עדיין טפסים. לחץ "+ טופס חדש".</td></tr><% } %>
+<% forms.forEach(f => { const link = baseUrl + '/f/' + f.id; %>
+<tr>
+  <td><a href="/admin/forms/<%= f.id %>/responses"><b><%= f.title %></b></a></td>
+  <td><span class="badge <%= f.status === 'open' ? 'approved' : 'draft' %>"><%= f.status === 'open' ? 'פתוח' : 'סגור' %></span></td>
+  <td><b><%= f.count %></b></td>
+  <td class="small"><%= fmtDT(f.last) %></td>
+  <td><span class="copy small" data-copy="<%= link %>">העתק קישור</span> · <a class="small" target="_blank" href="/f/<%= f.id %>">פתח</a></td>
+  <td class="row-actions">
+    <a class="btn sm" href="/admin/forms/<%= f.id %>/responses">תשובות</a>
+    <a class="btn sm ghost" href="/admin/forms/edit/<%= f.id %>">עריכה</a>
+    <a class="btn sm ghost" target="_blank" href="https://wa.me/?text=<%= encodeURIComponent(f.title + '\n' + link) %>">WhatsApp</a>
+  </td>
+</tr>
+<% }) %>
+</tbody></table></div>
+<div class="toast" id="toast">הקישור הועתק</div>
+<script>document.querySelectorAll('.copy').forEach(e=>e.onclick=()=>{navigator.clipboard.writeText(e.dataset.copy);const t=document.getElementById('toast');t.style.display='block';setTimeout(()=>t.style.display='none',1500)})</script>
+</div></body></html>

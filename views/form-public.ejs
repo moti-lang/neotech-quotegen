@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title><%= f ? f.title : 'טופס לא נמצא' %> · <%= company.name %></title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<% const val = (k) => values && values[k]; const has = (k, o) => { const v = values && values[k]; return Array.isArray(v) ? v.includes(o) : v === o; }; %>
+<div class="page gate form-page">
+  <div class="brand">
+    <div class="mono">FORM</div>
+    <div class="name"><img src="<%= company.logo_url %>" alt=""> <%= company.name %></div>
+  </div>
+  <hr class="strong">
+
+  <% if (!f) { %>
+    <h1 class="title" style="font-size:30px">הטופס לא נמצא</h1>
+    <p>בדוק את הקישור שקיבלת.</p>
+  <% } else if (done) { %>
+    <h1 class="title" style="font-size:30px">תודה!</h1>
+    <p class="subtitle" style="font-size:18px"><%= f.thanks || 'התשובות נשלחו בהצלחה.' %></p>
+  <% } else if (f.status !== 'open') { %>
+    <h1 class="title" style="font-size:30px"><%= f.title %></h1>
+    <p>הטופס סגור כרגע למילוי.</p>
+  <% } else { %>
+    <h1 class="title" style="font-size:30px"><%= f.title %></h1>
+    <% if (f.description) { %><p class="subtitle" style="font-size:17px"><%- String(f.description).replace(/</g,'&lt;').replace(/\n/g,'<br>') %></p><% } %>
+    <% if (error) { %><div class="err"><%= error %></div><% } %>
+
+    <form method="post" action="/f/<%= f.id %>">
+      <% if (f.collect_contact) { %>
+        <div class="fq">
+          <label class="fq-t">שם מלא <span class="req">*</span></label>
+          <input name="name" autocomplete="name" value="<%= val('name') || '' %>" required>
+          <label class="fq-t" style="margin-top:14px">טלפון <span class="req">*</span></label>
+          <input class="ltr" type="tel" name="phone" inputmode="tel" autocomplete="tel" placeholder="050-000-0000" value="<%= val('phone') || '' %>" required>
+        </div>
+      <% } %>
+
+      <% f.questions.forEach((q, i) => { %>
+        <div class="fq">
+          <div class="fq-t"><span class="mono" style="color:var(--navy)"><%= i + 1 %>.</span> <%= q.text %> <% if (q.required) { %><span class="req">*</span><% } %></div>
+          <% if (q.type === 'text') { %>
+            <textarea name="q<%= i %>" rows="3" <%= q.required ? 'required' : '' %>><%= val('q' + i) || '' %></textarea>
+          <% } else { %>
+            <% if (q.type === 'multi') { %><div class="small" style="margin-bottom:6px">אפשר לבחור יותר מתשובה אחת</div><% } %>
+            <% q.options.forEach((o, j) => { %>
+              <label class="opt">
+                <input type="<%= q.type === 'multi' ? 'checkbox' : 'radio' %>" name="q<%= i %>" value="<%= o %>" <%= has('q' + i, o) ? 'checked' : '' %> <%= (q.required && q.type === 'choice') ? 'required' : '' %>>
+                <span><%= o %></span>
+              </label>
+            <% }) %>
+          <% } %>
+        </div>
+      <% }) %>
+
+      <button class="btn" type="submit" style="width:100%;margin-top:8px">שליחה</button>
+    </form>
+  <% } %>
+  <p class="small" style="margin-top:18px;text-align:center"><%= company.website %></p>
+</div>
+</body>
+</html>

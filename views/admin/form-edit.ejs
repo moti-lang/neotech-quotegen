@@ -1,0 +1,75 @@
+<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title><%= isNew ? 'טופס חדש' : 'עריכת טופס' %> · ניהול</title><link rel="stylesheet" href="/style.css"></head>
+<body><div class="adm">
+<%- include('_nav', { navTitle: isNew ? 'טופס חדש' : 'עריכת טופס' }) %>
+
+<div class="card">
+  <label>כותרת הטופס *</label><input id="title" value="<%= f.title %>" placeholder="למשל: שאלון היכרות לפני פגישה">
+  <label>הסבר קצר (יופיע מתחת לכותרת)</label><textarea id="description" rows="2"><%= f.description %></textarea>
+  <div class="grid2">
+    <div><label>סטטוס</label><select id="status"><option value="open" <%= f.status==='open'?'selected':'' %>>פתוח למילוי</option><option value="closed" <%= f.status==='closed'?'selected':'' %>>סגור</option></select></div>
+    <div><label>הודעת תודה אחרי שליחה</label><input id="thanks" value="<%= f.thanks %>" placeholder="התשובות נשלחו בהצלחה. נחזור אליך בקרוב."></div>
+  </div>
+  <label class="opt" style="margin-top:14px"><input type="checkbox" id="collect_contact" <%= f.collect_contact ? 'checked' : '' %>> <span>לבקש שם וטלפון ממי שממלא (כדי לדעת מי ענה)</span></label>
+</div>
+
+<div class="card">
+  <h3 style="margin:0">שאלות</h3>
+  <div id="qs"></div>
+  <div class="row-actions" style="margin-top:8px">
+    <button class="btn sm ghost" onclick="addQ({type:'choice',options:['','']})">+ שאלה עם תשובה אחת</button>
+    <button class="btn sm ghost" onclick="addQ({type:'multi',options:['','']})">+ שאלה עם כמה תשובות</button>
+    <button class="btn sm ghost" onclick="addQ({type:'text'})">+ שאלה פתוחה</button>
+  </div>
+</div>
+
+<div class="row-actions" style="position:sticky;bottom:0;background:var(--bg);padding:12px 0">
+  <button class="btn" onclick="save()">שמור</button>
+  <% if (!isNew) { %>
+    <a class="btn ghost" target="_blank" href="/f/<%= f.id %>">פתח את הטופס</a>
+    <a class="btn ghost" href="/admin/forms/<%= f.id %>/responses">תשובות</a>
+    <form method="post" action="/admin/forms/delete/<%= f.id %>" onsubmit="return confirm('למחוק את הטופס ואת כל התשובות שלו?')" style="margin-right:auto"><button class="btn sm ghost" style="color:var(--maroon);border-color:var(--maroon)">מחיקה</button></form>
+  <% } %>
+  <span id="msg" class="small"></span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const F = <%- JSON.stringify(f) %>;
+const el = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const TYPES = { choice: 'תשובה אחת', multi: 'כמה תשובות', text: 'שאלה פתוחה' };
+
+function optHtml(o){ return `<div class="optrow"><input class="o" value="${esc(o)}" placeholder="תשובה"><button class="x2" title="הסר" onclick="this.parentNode.remove()">✕</button></div>`; }
+function qHtml(q){
+  const t = q.type || 'choice';
+  return `<div class="compbox q" data-type="${t}">
+    <button class="x" onclick="this.parentNode.remove();renum()">✕</button>
+    <div class="row-actions" style="margin-bottom:6px"><span class="mono qn"></span>
+      <select class="qt" style="width:auto" onchange="changeType(this)">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${k===t?'selected':''}>${v}</option>`).join('')}</select>
+      <button class="btn sm ghost" onclick="move(this,-1)" title="למעלה">↑</button><button class="btn sm ghost" onclick="move(this,1)" title="למטה">↓</button>
+    </div>
+    <input class="qtext" value="${esc(q.text)}" placeholder="נוסח השאלה">
+    <div class="opts" style="${t==='text'?'display:none':''}">${(q.options && q.options.length ? q.options : ['','']).map(optHtml).join('')}
+      <button class="btn sm ghost addo" style="margin-top:6px" onclick="this.insertAdjacentHTML('beforebegin', optHtml(''))">+ תשובה</button></div>
+    <label class="opt" style="margin-top:8px"><input type="checkbox" class="qreq" ${q.required!==false?'checked':''}> <span>חובה לענות</span></label>
+  </div>`;
+}
+function addQ(q){ el('qs').insertAdjacentHTML('beforeend', qHtml(q)); renum(); const all=el('qs').querySelectorAll('.qtext'); all[all.length-1].focus(); }
+function changeType(s){ const b=s.closest('.q'); b.dataset.type=s.value; b.querySelector('.opts').style.display = s.value==='text'?'none':''; }
+function move(btn,d){ const b=btn.closest('.q'); if(d<0&&b.previousElementSibling) b.parentNode.insertBefore(b,b.previousElementSibling); if(d>0&&b.nextElementSibling) b.parentNode.insertBefore(b.nextElementSibling,b); renum(); }
+function renum(){ el('qs').querySelectorAll('.q .qn').forEach((n,i)=>n.textContent='שאלה '+(i+1)); }
+(F.questions||[]).forEach(q=>el('qs').insertAdjacentHTML('beforeend', qHtml(q))); renum();
+
+async function save(){
+  const questions=[...el('qs').querySelectorAll('.q')].map(b=>({ text:b.querySelector('.qtext').value, type:b.querySelector('.qt').value,
+    options:[...b.querySelectorAll('.o')].map(i=>i.value), required:b.querySelector('.qreq').checked }));
+  const body={ id:F.id, title:el('title').value, description:el('description').value, status:el('status').value, thanks:el('thanks').value,
+    collect_contact:el('collect_contact').checked, questions };
+  const r=await fetch('/admin/forms/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json();
+  if(!j.ok){ el('msg').textContent='⚠ '+j.error; el('msg').style.color='var(--maroon)'; return; }
+  if(!F.id){ location.href='/admin/forms/edit/'+j.id; return; }
+  el('msg').textContent=''; const t=el('toast'); t.textContent='נשמר ✓'; t.style.display='block'; setTimeout(()=>t.style.display='none',1500);
+}
+</script>
+</div></body></html>

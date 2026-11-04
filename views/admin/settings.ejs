@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>הגדרות · ניהול</title><link rel="stylesheet" href="/style.css"></head>
 <body><div class="adm">
-<nav><a class="btn sm" href="/admin/new">+ הצעה חדשה</a><a href="/admin">כל ההצעות</a><a href="/admin/settings">הגדרות</a><span class="logo">הגדרות</span></nav>
+<%- include('_nav', { navTitle: 'הגדרות' }) %>
 <div class="card"><h3 style="margin:0">פרטי החברה (מופיעים בכל ההצעות)</h3>
 <div class="grid2">
  <div><label>שם מותג (לועזי)</label><input id="c_name" value="<%= S.company.name %>"></div>

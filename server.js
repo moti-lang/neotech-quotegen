@@ -153,4 +153,92 @@ app.post('/q/:number/approve', (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(PORT, () => console.log(`QuoteGen running on http://localhost:${PORT}  (admin: /admin)`));
+// ================= FORMS =================
+const fmtDT = (s) => s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', dateStyle: 'short', timeStyle: 'short' }) : '';
+const baseOf = (req) => BASE_URL || `${req.protocol}://${req.get('host')}`;
+
+function summarize(form, responses) {
+  return form.questions.map((q, i) => {
+    if (q.type === 'text') return { ...q, texts: responses.map(r => ({ name: r.name, v: r.answers[i] })).filter(x => x.v) };
+    const counts = (q.options || []).map(o => ({ o, n: 0 }));
+    let answered = 0;
+    responses.forEach(r => {
+      const v = r.answers[i]; const arr = Array.isArray(v) ? v : (v ? [v] : []);
+      if (arr.length) answered++;
+      arr.forEach(x => { const c = counts.find(c => c.o === x); if (c) c.n++; });
+    });
+    return { ...q, counts, answered };
+  });
+}
+
+app.get('/admin/forms', (req, res) => res.render('admin/forms', { forms: D.listForms(), baseUrl: baseOf(req), fmtDT }));
+app.get('/admin/forms/new', (req, res) => res.render('admin/form-edit', {
+  f: { id: '', title: '', description: '', collect_contact: 1, status: 'open', thanks: '',
+       questions: [{ text: '', type: 'choice', options: ['', ''], required: true }] }, isNew: true }));
+app.get('/admin/forms/edit/:id', (req, res) => {
+  const f = D.getForm(req.params.id); if (!f) return res.status(404).send('לא נמצא');
+  res.render('admin/form-edit', { f, isNew: false });
+});
+app.post('/admin/forms/save', (req, res) => {
+  const b = req.body;
+  if (!b.title || !String(b.title).trim()) return res.status(400).json({ error: 'חסרה כותרת לטופס' });
+  const questions = (b.questions || []).map(q => ({
+    text: String(q.text || '').trim(), type: ['choice', 'multi', 'text'].includes(q.type) ? q.type : 'choice',
+    options: (q.options || []).map(o => String(o).trim()).filter(Boolean), required: !!q.required,
+  })).filter(q => q.text);
+  if (!questions.length) return res.status(400).json({ error: 'צריך לפחות שאלה אחת' });
+  const bad = questions.find(q => q.type !== 'text' && q.options.length < 2);
+  if (bad) return res.status(400).json({ error: `לשאלה "${bad.text}" צריך לפחות שתי תשובות` });
+  const id = D.saveForm({ id: b.id, title: b.title.trim(), description: b.description, questions, collect_contact: b.collect_contact, status: b.status, thanks: b.thanks });
+  res.json({ ok: true, id });
+});
+app.post('/admin/forms/delete/:id', (req, res) => { D.deleteForm(req.params.id); res.redirect('/admin/forms'); });
+app.post('/admin/forms/:id/response/:rid/delete', (req, res) => { D.deleteResponse(req.params.rid); res.redirect('/admin/forms/' + req.params.id + '/responses'); });
+app.get('/admin/forms/:id/responses', (req, res) => {
+  const f = D.getForm(req.params.id); if (!f) return res.status(404).send('לא נמצא');
+  const responses = D.getResponses(f.id);
+  res.render('admin/form-responses', { f, responses, summary: summarize(f, responses), baseUrl: baseOf(req), fmtDT });
+});
+app.get('/admin/forms/:id/export.csv', (req, res) => {
+  const f = D.getForm(req.params.id); if (!f) return res.status(404).send('לא נמצא');
+  const esc = (v) => '"' + String(Array.isArray(v) ? v.join(' | ') : (v ?? '')).replace(/"/g, '""') + '"';
+  const head = ['תאריך', ...(f.collect_contact ? ['שם', 'טלפון'] : []), ...f.questions.map(q => q.text)];
+  const rows = D.getResponses(f.id).map(r => [fmtDT(r.at), ...(f.collect_contact ? [r.name, r.phone] : []), ...f.questions.map((_, i) => r.answers[i])]);
+  res.set('Content-Type', 'text/csv; charset=utf-8');
+  res.set('Content-Disposition', `attachment; filename="form-${f.id}.csv"`);
+  res.send('\uFEFF' + [head, ...rows].map(r => r.map(esc).join(',')).join('\r\n'));
+});
+
+// public form
+const submitAttempts = new Map();
+app.get('/f/:id', (req, res) => {
+  const f = D.getForm(req.params.id);
+  if (!f) return res.status(404).render('form-public', { f: null, company: settings().company, error: null, done: false, values: {} });
+  res.render('form-public', { f, company: settings().company, error: null, done: false, values: {} });
+});
+app.post('/f/:id', (req, res) => {
+  const f = D.getForm(req.params.id);
+  const company = settings().company;
+  if (!f) return res.status(404).render('form-public', { f: null, company, error: null, done: false, values: {} });
+  if (f.status !== 'open') return res.render('form-public', { f, company, error: null, done: false, values: {} });
+  const key = req.ip + ':' + f.id; const a = submitAttempts.get(key) || { n: 0, t: Date.now() };
+  if (Date.now() - a.t > 10 * 60e3) { a.n = 0; a.t = Date.now(); }
+  if (++a.n > 20) { submitAttempts.set(key, a); return res.status(429).render('form-public', { f, company, error: 'יותר מדי שליחות. נסה שוב בעוד כמה דקות.', done: false, values: req.body }); }
+  submitAttempts.set(key, a);
+  const answers = f.questions.map((q, i) => {
+    const v = req.body['q' + i];
+    if (q.type === 'multi') return (Array.isArray(v) ? v : (v ? [v] : [])).filter(x => q.options.includes(x));
+    if (q.type === 'choice') return q.options.includes(v) ? v : '';
+    return String(v || '').trim().slice(0, 3000);
+  });
+  const missing = f.questions.findIndex((q, i) => q.required && (Array.isArray(answers[i]) ? !answers[i].length : !answers[i]));
+  const name = String(req.body.name || '').trim().slice(0, 120), phone = String(req.body.phone || '').trim().slice(0, 30);
+  let error = null;
+  if (f.collect_contact && (name.length < 2 || D.normPhone(phone).length < 9)) error = 'נא למלא שם מלא ומספר טלפון תקין';
+  else if (missing >= 0) error = `נא לענות על השאלה: "${f.questions[missing].text}"`;
+  if (error) return res.status(400).render('form-public', { f, company, error, done: false, values: req.body });
+  D.addResponse(f.id, name, phone, answers, req.ip);
+  res.render('form-public', { f, company, error: null, done: true, values: {} });
+});
+
+app.listen(PORT,() => console.log(`QuoteGen running on http://localhost:${PORT}  (admin: /admin)`));

@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title><%= isNew?'הצעה חדשה':'עריכה '+q.number %> · ניהול</title><link rel="stylesheet" href="/style.css"></head>
 <body><div class="adm">
-<nav><a class="btn sm" href="/admin/new">+ הצעה חדשה</a><a href="/admin">כל ההצעות</a><a href="/admin/settings">הגדרות</a><span class="logo"><%= isNew?'הצעה חדשה':'עריכת הצעה' %> <span class="mono" style="color:var(--maroon)"><%= q.number %></span></span></nav>
+<%- include('_nav', { navTitle: (isNew?'הצעה חדשה':'עריכת הצעה ' + q.number) }) %>
 
 <div class="card">
   <div class="grid3">

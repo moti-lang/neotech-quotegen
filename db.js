@@ -118,3 +118,69 @@ function getViews(number) {
 }
 
 module.exports = { db, normPhone, getSetting, setSetting, nextNumber, listQuotes, getQuote, saveQuote, deleteQuote, logView, addApproval, getApproval, getViews };
+
+// ================= FORMS =================
+db.exec(`
+CREATE TABLE IF NOT EXISTS forms (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  questions TEXT NOT NULL,          -- JSON [{text,type:'choice'|'multi'|'text',options:[],required}]
+  collect_contact INTEGER NOT NULL DEFAULT 1,
+  status TEXT NOT NULL DEFAULT 'open',   -- open | closed
+  thanks TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS responses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  form_id TEXT NOT NULL,
+  name TEXT, phone TEXT,
+  answers TEXT NOT NULL,            -- JSON array aligned with questions (string or array)
+  ip TEXT,
+  at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+`);
+function newFormId() {
+  const a = 'abcdefghjkmnpqrstuvwxyz23456789';
+  for (;;) {
+    let s = ''; for (let i = 0; i < 6; i++) s += a[Math.floor(Math.random() * a.length)];
+    if (!db.prepare('SELECT 1 FROM forms WHERE id=?').get(s)) return s;
+  }
+}
+function listForms() {
+  return db.prepare('SELECT id, title, status, created_at, updated_at FROM forms ORDER BY created_at DESC').all()
+    .map(f => ({ ...f, count: db.prepare('SELECT COUNT(*) c FROM responses WHERE form_id=?').get(f.id).c,
+                 last: (db.prepare('SELECT at FROM responses WHERE form_id=? ORDER BY at DESC LIMIT 1').get(f.id) || {}).at }));
+}
+function getForm(id) {
+  const f = db.prepare('SELECT * FROM forms WHERE id=?').get(id);
+  if (!f) return null;
+  f.questions = JSON.parse(f.questions);
+  return f;
+}
+function saveForm(f) {
+  const q = JSON.stringify(f.questions || []);
+  if (f.id && db.prepare('SELECT 1 FROM forms WHERE id=?').get(f.id)) {
+    db.prepare(`UPDATE forms SET title=?, description=?, questions=?, collect_contact=?, status=?, thanks=?, updated_at=datetime('now') WHERE id=?`)
+      .run(f.title, f.description || '', q, f.collect_contact ? 1 : 0, f.status || 'open', f.thanks || '', f.id);
+    return f.id;
+  }
+  const id = newFormId();
+  db.prepare('INSERT INTO forms(id, title, description, questions, collect_contact, status, thanks) VALUES(?,?,?,?,?,?,?)')
+    .run(id, f.title, f.description || '', q, f.collect_contact ? 1 : 0, f.status || 'open', f.thanks || '');
+  return id;
+}
+function deleteForm(id) {
+  db.prepare('DELETE FROM forms WHERE id=?').run(id);
+  db.prepare('DELETE FROM responses WHERE form_id=?').run(id);
+}
+function addResponse(formId, name, phone, answers, ip) {
+  db.prepare('INSERT INTO responses(form_id, name, phone, answers, ip) VALUES(?,?,?,?,?)').run(formId, name || null, phone || null, JSON.stringify(answers), ip);
+}
+function getResponses(formId) {
+  return db.prepare('SELECT * FROM responses WHERE form_id=? ORDER BY at DESC').all(formId).map(r => ({ ...r, answers: JSON.parse(r.answers) }));
+}
+function deleteResponse(id) { db.prepare('DELETE FROM responses WHERE id=?').run(id); }
+
+Object.assign(module.exports, { listForms, getForm, saveForm, deleteForm, addResponse, getResponses, deleteResponse });

@@ -88,3 +88,19 @@ label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px;font-wei
 @media print{
   body{background:#fff}.page{box-shadow:none;max-width:none}.sign,.preview-bar,.noprint{display:none!important}
 }
+/* forms */
+.form-page{max-width:560px}
+.fq{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0;background:#fff}
+.fq-t{font-weight:700;font-size:17px;margin:0 0 10px;color:var(--ink);display:block}
+.req{color:var(--maroon)}
+.opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;margin:8px 0;cursor:pointer;font-size:16px;color:var(--ink);font-weight:400}
+.opt input{width:20px;height:20px;margin:0;flex:none;accent-color:var(--navy)}
+.opt:has(input:checked){border-color:var(--navy);background:#f1f6f9}
+.optrow{display:flex;gap:8px;margin-top:6px}
+.x2{background:#fff;border:1px solid var(--line);border-radius:6px;cursor:pointer;padding:0 10px}
+.bar-row{display:grid;grid-template-columns:minmax(90px,1.2fr) 3fr auto;gap:10px;align-items:center;margin:6px 0}
+.bar{height:14px;background:#eef0f2;border-radius:7px;overflow:hidden}
+.bar-fill{height:100%;background:var(--navy);border-radius:7px}
+.bar-num{white-space:nowrap;min-width:70px;text-align:left}
+.txtans{padding:8px 10px;border-right:3px solid var(--navy);background:#fafbfc;margin:6px 0;border-radius:4px}
+.ans-row{padding:8px 0;border-top:1px solid var(--line)}
