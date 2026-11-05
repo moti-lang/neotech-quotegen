@@ -1,6 +1,12 @@
 <!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title><%= isNew?'הצעה חדשה':'עריכה '+q.number %> · ניהול</title><link rel="stylesheet" href="/style.css"></head>
 <body><div class="adm">
 <%- include('_nav', { navTitle: (isNew?'הצעה חדשה':'עריכת הצעה ' + q.number) }) %>
+<% if (q.status === 'draft') { %>
+<div class="card draft-banner">
+  <% if (q.data.source === 'claude') { %><b>✓ ההצעה נוצרה על ידי Claude.</b> בדוק את הפרטים, תקן מה שצריך ושמור.<br><% } %>
+  <b>ההצעה במצב טיוטה – הלקוח עדיין לא יכול לפתוח אותה.</b> כשהיא מוכנה, שנה את הסטטוס ל"ממתין לאישור" ושמור.
+</div>
+<% } %>
 
 <div class="card">
   <div class="grid3">

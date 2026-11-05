@@ -22,6 +22,16 @@
 </div>
 <div class="small">השלבים, פריסת התשלומים והתנאים לברירת מחדל נמצאים בקובץ defaults.js; כל הצעה ניתנת לעריכה בנפרד.</div>
 </div>
+<div class="card"><h3 style="margin:0">חיבור ל-Claude</h3>
+<p class="small" style="margin:6px 0 10px">מחבר את המערכת ל-Claude שלך, ואז אפשר לכתוב בכל צ'אט: "הנה קובץ הצעת מחיר, תהפוך אותו להצעה דיגיטלית". Claude יוצר את ההצעה כטיוטה ומחזיר קישור.</p>
+<label>כתובת המחבר (סודית – אל תשתף)</label>
+<div class="row-actions"><input class="ltr" id="mcpurl" value="<%= mcpUrl %>" readonly style="flex:1"><button class="btn sm" onclick="navigator.clipboard.writeText(document.getElementById('mcpurl').value);this.textContent='הועתק ✓'">העתק</button></div>
+<ol class="small" style="margin:10px 0 0;padding-right:18px;line-height:1.9">
+  <li>ב-Claude: הגדרות ← Connectors ← Add custom connector.</li>
+  <li>שם: "הצעות מחיר", כתובת: הכתובת שלמעלה ← Add.</li>
+  <li>בצ'אט חדש, בתפריט הכלים, ודא שהמחבר "הצעות מחיר" מופעל.</li>
+</ol>
+</div>
 <div class="row-actions"><button class="btn" onclick="save()">שמור הגדרות</button><span id="msg" class="small"></span></div>
 <script>
 async function save(){ const g=id=>document.getElementById(id).value;

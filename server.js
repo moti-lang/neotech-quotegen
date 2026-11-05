@@ -107,7 +107,7 @@ app.get('/admin/preview/:number', (req, res) => {
   const q = D.getQuote(req.params.number); if (!q) return res.status(404).send('לא נמצא');
   res.render('quote', { ...compute(q), preview: true });
 });
-app.get('/admin/settings', (req, res) => res.render('admin/settings', { S: settings(), nextSeq: D.getSetting('next_seq', '79'), prefix: D.getSetting('prefix', 'HM'), saved: req.query.saved }));
+app.get('/admin/settings', (req, res) => res.render('admin/settings', { S: settings(), nextSeq: D.getSetting('next_seq', '79'), prefix: D.getSetting('prefix', 'HM'), saved: req.query.saved, mcpUrl: `${req.protocol}://${req.get('host')}` + mcp.path }));
 app.post('/admin/settings', (req, res) => {
   const b = req.body;
   D.setSetting('settings', JSON.stringify(b.settings || {}));
@@ -170,6 +170,10 @@ function summarize(form, responses) {
     return { ...q, counts, answered };
   });
 }
+
+// ================= CLAUDE CONNECTOR (MCP) =================
+const { mountMcp } = require('./mcp');
+const mcp = mountMcp(app, { D, settings, todayISO, sign, baseOf });
 
 app.get('/admin/forms', (req, res) => res.render('admin/forms', { forms: D.listForms(), baseUrl: baseOf(req), fmtDT }));
 app.get('/admin/forms/new', (req, res) => res.render('admin/form-edit', {

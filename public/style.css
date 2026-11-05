@@ -104,3 +104,4 @@ label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px;font-wei
 .bar-num{white-space:nowrap;min-width:70px;text-align:left}
 .txtans{padding:8px 10px;border-right:3px solid var(--navy);background:#fafbfc;margin:6px 0;border-radius:4px}
 .ans-row{padding:8px 0;border-top:1px solid var(--line)}
+.draft-banner{background:#fff8e6;border-color:#f0d58a;color:#5c4400}
