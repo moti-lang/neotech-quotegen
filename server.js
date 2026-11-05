@@ -15,6 +15,15 @@ const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.set('trust proxy', true);
+// לוג קצר לבקשות המחבר (הטוקן מוסתר) – לאבחון חיבור ל-Claude
+app.use((req, res, next) => {
+  if (!/^\/(mcp|\.well-known|register|authorize|token)/.test(req.path)) return next();
+  const t0 = Date.now();
+  res.on('finish', () => console.log('[mcp-log]', req.method, req.originalUrl.replace(/[0-9a-f]{20,}/g, '<token>'),
+    res.statusCode, `${Date.now() - t0}ms`, 'ct=' + (req.get('content-type') || '-'), 'accept=' + (req.get('accept') || '-'),
+    'ua=' + (req.get('user-agent') || '-').slice(0, 60)));
+  next();
+});
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
