@@ -19,7 +19,11 @@ app.set('trust proxy', true);
 app.use((req, res, next) => {
   if (!/^\/(mcp|\.well-known|register|authorize|token)/.test(req.path)) return next();
   const t0 = Date.now();
-  res.on('finish', () => console.log('[mcp-log]', req.method, req.originalUrl.replace(/[0-9a-f]{20,}/g, '<token>'),
+  const seg = (req.path.split('/')[2] || '');
+  const shape = seg ? `seg[len=${seg.length},${seg.slice(0, 4)}…${seg.slice(-4)}]` : '';
+  res.on('finish', () => console.log('[mcp-log]', req.method, req.originalUrl.replace(/[0-9a-f]{20,}/g, '<token>'), shape,
+    'q=' + (Object.keys(req.query || {}).join(',') || '-'), 'sid=' + (req.get('mcp-session-id') ? 'yes' : 'no'),
+    'auth=' + (req.get('authorization') ? 'yes' : 'no'),
     res.statusCode, `${Date.now() - t0}ms`, 'ct=' + (req.get('content-type') || '-'), 'accept=' + (req.get('accept') || '-'),
     'ua=' + (req.get('user-agent') || '-').slice(0, 60)));
   next();
