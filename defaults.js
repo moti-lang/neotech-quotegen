@@ -4,7 +4,7 @@ module.exports = {
     name: 'NeoTech Vision',
     name_he: 'ניאוטק וויז\'ן בע"מ',
     tagline: 'ENTERPRISE AI ARCHITECTURE',
-    website: 'neotechvision.io',
+    website: 'quote.automation1.co.il',
     email: 'moti@automation1.co.il',
     phone: '',
     hp: '516976073',

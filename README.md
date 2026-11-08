@@ -29,24 +29,24 @@ node seed.js                # אופציונלי – הצעה לדוגמה HM-20
 npm start                   # http://localhost:3000/admin
 ```
 
-## העלאה לשרת (quote.neotechvision.io)
+## העלאה לשרת (quote.automation1.co.il)
 
 ### אפשרות א – Railway / Render (הכי פשוט, בלי שרת משלך)
 1. העלה את התיקייה ל-GitHub (ללא `data/` ו-`.env`).
 2. צור שירות חדש מה-repo. פקודת הרצה: `npm start`.
 3. הוסף **Volume** (דיסק קבוע) ומפה אותו ל-`/app/data` – שם נשמר מסד הנתונים.
-4. משתני סביבה: `ADMIN_PASSWORD`, `SECRET` (מחרוזת אקראית ארוכה), `BASE_URL=https://quote.neotechvision.io`, `DATA_DIR=/app/data`.
-5. ב-DNS של neotechvision.io: רשומת CNAME של `quote` לכתובת שהשירות נותן.
+4. משתני סביבה: `ADMIN_PASSWORD`, `SECRET` (מחרוזת אקראית ארוכה), `BASE_URL=https://quote.automation1.co.il` (ברירת המחדל בקוד), `DATA_DIR=/app/data`.
+5. ב-DNS של automation1.co.il (אצל VANGUS): רשומת CNAME בשם `quote` אל `neotech-quotegen.onrender.com`. הכתובת onrender.com נשארת פעילה במקביל.
 
 ### אפשרות ב – Docker על VPS
 ```bash
 docker build -t quotegen .
 docker run -d --name quotegen -p 3000:3000 -v $PWD/data:/app/data \
-  -e ADMIN_PASSWORD=... -e SECRET=... -e BASE_URL=https://quote.neotechvision.io quotegen
+  -e ADMIN_PASSWORD=... -e SECRET=... -e BASE_URL=https://quote.automation1.co.il quotegen
 ```
 ומולו Nginx/Caddy עם HTTPS.
 
-> הצעות ישנות שכבר נשלחו מהמערכת הקודמת לא עוברות אוטומטית – אם צריך, מזינים אותן מחדש במסך הניהול עם אותו מספר, והקישור הישן ימשיך לעבוד.
+> הכתובת quote.neotechvision.io שייכת למערכת אחרת (של חבר) ואינה מחוברת לשרת הזה. הצעות שנשלחו משם נשארות שם.
 
 ## התאמות
 * **לוגו** – החלף את `public/logo.svg` (או הדבק כתובת בהגדרות).

@@ -9,7 +9,9 @@ const DEFAULTS = require('./defaults');
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234';
 const SECRET = process.env.SECRET || crypto.randomBytes(32).toString('hex');
-const BASE_URL = process.env.BASE_URL || ''; // e.g. https://quote.neotechvision.io
+// הכתובת הציבורית – מקור יחיד לכל הקישורים שנוצרים (הצעות, טפסים, מחבר Claude).
+// השרת עונה על כל דומיין שמחובר אליו (גם onrender.com), כך שקישורים ישנים ממשיכים לעבוד.
+const BASE_URL = (process.env.BASE_URL || 'https://quote.automation1.co.il').replace(/\/+$/, '');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -38,6 +40,16 @@ const sign = (s) => crypto.createHmac('sha256', SECRET).update(s).digest('hex');
 const fmt = (n) => new Intl.NumberFormat('he-IL').format(Math.round(n));
 const fmtDate = (iso) => { const d = new Date(iso); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`; };
 const todayISO = () => new Date().toISOString().slice(0, 10);
+
+// מעבר דומיין: טקסט "אתר" שנשמר בהגדרות כ-neotechvision.io מוחלף פעם אחת לכתובת החדשה. שאר פרטי החברה לא נוגעים.
+(() => {
+  const s = JSON.parse(D.getSetting('settings', 'null'));
+  if (s && s.company && /neotechvision\.io/i.test(s.company.website || '')) {
+    s.company.website = 'quote.automation1.co.il';
+    D.setSetting('settings', JSON.stringify(s));
+    console.log('settings: website updated to quote.automation1.co.il');
+  }
+})();
 
 function settings() {
   const s = JSON.parse(D.getSetting('settings', 'null')) || {};
@@ -88,7 +100,7 @@ app.get('/admin/logout', (req, res) => { res.clearCookie('adm'); res.redirect('/
 app.use('/admin', adminAuth);
 
 // ---------- admin pages ----------
-app.get('/admin', (req, res) => res.render('admin/list', { quotes: D.listQuotes(), baseUrl: BASE_URL || `${req.protocol}://${req.get('host')}`, fmtDate }));
+app.get('/admin', (req, res) => res.render('admin/list', { quotes: D.listQuotes(), baseUrl: BASE_URL, fmtDate }));
 
 app.get('/admin/new', (req, res) => {
   const S = settings();
@@ -120,7 +132,7 @@ app.get('/admin/preview/:number', (req, res) => {
   const q = D.getQuote(req.params.number); if (!q) return res.status(404).send('לא נמצא');
   res.render('quote', { ...compute(q), preview: true });
 });
-app.get('/admin/settings', (req, res) => res.render('admin/settings', { S: settings(), nextSeq: D.getSetting('next_seq', '79'), prefix: D.getSetting('prefix', 'HM'), saved: req.query.saved, mcpUrl: `${req.protocol}://${req.get('host')}` + mcp.path }));
+app.get('/admin/settings', (req, res) => res.render('admin/settings', { S: settings(), nextSeq: D.getSetting('next_seq', '79'), prefix: D.getSetting('prefix', 'HM'), saved: req.query.saved, mcpUrl: BASE_URL + mcp.path }));
 app.post('/admin/settings', (req, res) => {
   const b = req.body;
   D.setSetting('settings', JSON.stringify(b.settings || {}));
@@ -168,7 +180,7 @@ app.post('/q/:number/approve', (req, res) => {
 
 // ================= FORMS =================
 const fmtDT = (s) => s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', dateStyle: 'short', timeStyle: 'short' }) : '';
-const baseOf = (req) => BASE_URL || `${req.protocol}://${req.get('host')}`;
+const baseOf = () => BASE_URL;
 
 function summarize(form, responses) {
   return form.questions.map((q, i) => {
