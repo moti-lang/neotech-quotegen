@@ -65,6 +65,8 @@ function compute(q) {
   const hours = comps.reduce((a, c) => a + c.hours, 0);
   const vatAmt = subtotal * vat / 100;
   const total = subtotal + vatAmt;
+  // vat 0 = הצעה שמציגה מחירים לפני מע"מ בלבד, בלי שורת מע"מ ובלי סה"כ כולל מע"מ
+  const showVat = vat > 0;
   const split = (d.payment_split && d.payment_split.length ? d.payment_split : S.payment_split).map(p => ({ ...p, pct: Number(p.pct), amount: total * Number(p.pct) / 100 }));
   const issued = fmtDate(q.issued_at);
   const expires = new Date(q.issued_at); expires.setDate(expires.getDate() + Number(q.valid_days));
@@ -72,12 +74,17 @@ function compute(q) {
   const joinHe = (arr) => arr.length <= 1 ? arr.join('') : arr.slice(0, -1).join(', ') + ' ו-' + arr[arr.length - 1];
   const vars = {
     PAYMENT_SPLIT: joinHe(split.map(p => `${p.pct}% ${p.label}`)),
-    PAYMENT_AMOUNTS: `הקמה: ${split.map(p => fmt(p.amount) + ' ₪').join(' + ')} = ${fmt(total)} ₪ כולל מע"מ`,
+    PAYMENT_AMOUNTS: `הקמה: ${split.map(p => fmt(p.amount) + ' ₪').join(' + ')} = ${fmt(total)} ₪ ${showVat ? 'כולל מע"מ' : 'לפני מע"מ'}`,
     COMPANY: C.name, COMPANY_HE: C.name_he, BANK: C.bank, VALID_DAYS: q.valid_days, ISSUED: issued, VAT: vat,
   };
-  const terms = (d.terms && d.terms.length ? d.terms : S.terms).map(t => ({ ...t, text: String(t.text).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`) }));
+  const terms = (d.terms && d.terms.length ? d.terms : S.terms)
+    .map(t => (!showVat && /\{VAT\}/.test(String(t.text))) ? { ...t, text: 'המחירים אינם כוללים מע"מ.' } : t)
+    // השעות לא מוצגות בהצעה, ולכן גם תנאים ששמורים בהגדרות לא מדברים עליהן
+    .map(t => ({ ...t, text: String(t.text)
+      .replace('המחיר קבוע לכל רכיב ואינו תלוי במספר השעות בפועל. השעות המפורטות הן הערכה מבוססת ניסיון בפרויקטים דומים, והיקף העבודה', 'המחיר קבוע לכל רכיב, והיקף העבודה') }))
+    .map(t => ({ ...t, text: String(t.text).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`) }));
   const stages = d.stages && d.stages.length ? d.stages : S.stages;
-  return { q, S, C, comps, subtotal, hours, vat, vatAmt, total, split, terms, stages, issued, expires: fmtDate(expires), expired: expires < new Date(), fmt,
+  return { q, S, C, comps, subtotal, hours, vat, showVat, vatAmt, total, split, terms, stages, issued, expires: fmtDate(expires), expired: expires < new Date(), fmt,
            approval: D.getApproval(q.number), outcomes: d.outcomes || [], description: d.description || '', lineLabel: d.line_label || 'הקמת המערכת' };
 }
 
